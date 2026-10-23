@@ -1,0 +1,15 @@
+{
+  "name": "clip-relay",
+  "version": "1.2.0",
+  "description": "內網自建的剪貼簿歷史與跨端文字／檔案傳輸服務（零依賴、PWA）",
+  "private": true,
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node supervisor.js",
+    "serve": "node src/server.js",
+    "test": "node --test test/"
+  }
+}

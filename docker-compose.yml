@@ -1,0 +1,56 @@
+# Clip Relay —— NAS（Synology Container Manager / QNAP / Portainer 等）部署用。
+#
+# 「免重建更新」設計：
+#   - 直接使用官方 node:22-alpine 映像，不需要 build，也沒有任何會被快取的映像層
+#   - 專案資料夾以唯讀方式掛進容器，容器內的 supervisor 會偵測檔案變動並自動重啟服務
+#   → 之後有新版本，只要把新檔案「覆蓋上傳」到同一個資料夾即可（約 5~10 秒內生效），
+#     不需要刪資料夾、不需要刪除或重建 Docker 專案、Cloudflare DNS 也不用動。
+#
+# 啟動：docker compose up -d      預覽：http://localhost:9144
+name: clip-relay
+
+services:
+  clip-relay:
+    image: node:22-alpine
+    container_name: clip-relay
+    working_dir: /app
+    command: ["node", "supervisor.js"]
+    restart: unless-stopped
+    ports:
+      - "${HOST_PORT:-9144}:9144"
+    environment:
+      PORT: "9144"
+      DATA_DIR: /data
+      MAX_ITEMS: "${MAX_ITEMS:-50}"
+      MAX_ITEM_BYTES: "${MAX_ITEM_BYTES:-1048576}"
+      # 檔案：單檔上限 / 檔案總容量（超過總量時淘汰最舊）；皆以 bytes 計，預設 1 GiB / 5 GiB
+      MAX_FILE_BYTES: "${MAX_FILE_BYTES:-1073741824}"
+      MAX_FILE_TOTAL_BYTES: "${MAX_FILE_TOTAL_BYTES:-5368709120}"
+      DEFAULT_TTL: "${DEFAULT_TTL:-600}"
+      MAX_TTL: "${MAX_TTL:-86400}"
+      POST_RATE_PER_MIN: "${POST_RATE_PER_MIN:-30}"
+      # 放在 Cloudflare / 反向代理後面時設為 1，才能取得真實客戶端 IP 做限流
+      TRUST_PROXY: "${TRUST_PROXY:-0}"
+      # 1 = 把索引快照寫入 /data，重啟（含熱更新）後文字與檔案歷史仍在；0 = 重啟即清空（含檔案）
+      PERSIST: "${PERSIST:-1}"
+      TZ: "${TZ:-Asia/Taipei}"
+    volumes:
+      - ./:/app:ro
+      - clip_data:/data
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    mem_limit: 256m
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:9144/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  clip_data:

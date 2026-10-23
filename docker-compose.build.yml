@@ -1,0 +1,26 @@
+# 方式 B：自行 build 映像（不可變映像）。更新時需重新 build：
+#   docker compose -f docker-compose.build.yml up -d --build
+name: clip-relay
+services:
+  clip-relay:
+    build: .
+    image: clip-relay:local
+    container_name: clip-relay
+    restart: unless-stopped
+    ports:
+      - "${HOST_PORT:-9144}:9144"
+    environment:
+      TRUST_PROXY: "${TRUST_PROXY:-0}"
+      PERSIST: "${PERSIST:-1}"
+      MAX_FILE_BYTES: "${MAX_FILE_BYTES:-1073741824}"
+      MAX_FILE_TOTAL_BYTES: "${MAX_FILE_TOTAL_BYTES:-5368709120}"
+      TZ: "${TZ:-Asia/Taipei}"
+    volumes:
+      - clip_data:/data
+    read_only: true
+    tmpfs: [/tmp]
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    mem_limit: 256m
+volumes:
+  clip_data:

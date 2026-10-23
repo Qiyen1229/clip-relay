@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <!-- viewport-fit=cover：延伸到瀏海／動態島與底部橫條後方，由 CSS 的 env(safe-area-inset-*) 內縮 -->
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#2563eb">
+  <meta name="referrer" content="no-referrer">
+  <title>Clip Relay</title>
+
+  <!-- PWA / iOS「加入主畫面」 -->
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Clip Relay">
+  <meta name="format-detection" content="telephone=no">
+
+  <!-- 啟動畫面（直向；由 scripts/gen-assets.py 產生） -->
+  <link rel="apple-touch-startup-image" href="/splash-640x1136.png" media="(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)">
+  <link rel="apple-touch-startup-image" href="/splash-750x1334.png" media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)">
+  <link rel="apple-touch-startup-image" href="/splash-1242x2208.png" media="(device-width: 414px) and (device-height: 736px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
+  <link rel="apple-touch-startup-image" href="/splash-1125x2436.png" media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
+  <link rel="apple-touch-startup-image" href="/splash-828x1792.png" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)">
+  <link rel="apple-touch-startup-image" href="/splash-1242x2688.png" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
+  <link rel="apple-touch-startup-image" href="/splash-1170x2532.png" media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
+  <link rel="apple-touch-startup-image" href="/splash-1284x2778.png" media="(device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
+  <link rel="apple-touch-startup-image" href="/splash-1179x2556.png" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
+  <link rel="apple-touch-startup-image" href="/splash-1290x2796.png" media="(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
+  <link rel="apple-touch-startup-image" href="/splash-1206x2622.png" media="(device-width: 402px) and (device-height: 874px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
+  <link rel="apple-touch-startup-image" href="/splash-1320x2868.png" media="(device-width: 440px) and (device-height: 956px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
+  <link rel="apple-touch-startup-image" href="/splash-1536x2048.png" media="(device-width: 768px) and (device-height: 1024px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)">
+  <link rel="apple-touch-startup-image" href="/splash-1668x2224.png" media="(device-width: 834px) and (device-height: 1112px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)">
+  <link rel="apple-touch-startup-image" href="/splash-1640x2360.png" media="(device-width: 820px) and (device-height: 1180px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)">
+  <link rel="apple-touch-startup-image" href="/splash-1668x2388.png" media="(device-width: 834px) and (device-height: 1194px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)">
+  <link rel="apple-touch-startup-image" href="/splash-2048x2732.png" media="(device-width: 1024px) and (device-height: 1366px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)">
+
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header class="top">
+    <h1>Clip Relay</h1>
+    <span id="conn" class="conn" title="連線中…" role="img" aria-label="連線狀態">●</span>
+  </header>
+
+  <div id="banner" class="banner" hidden>
+    <span>有新版本可用</span>
+    <button id="reload-btn" type="button">重新整理</button>
+  </div>
+
+  <main>
+    <section class="card">
+      <label class="sr-only" for="text-input">要傳送的文字</label>
+      <textarea id="text-input" rows="5" placeholder="貼上或輸入要傳送的文字（Ctrl/⌘ + Enter 送出）" spellcheck="false" autocapitalize="off" autocorrect="off"></textarea>
+      <div class="row between">
+        <span id="size-hint" class="muted"></span>
+        <button id="paste-btn" type="button" class="ghost" hidden>從剪貼簿貼上</button>
+      </div>
+      <div class="row wrap">
+        <label class="inline">有效時間
+          <select id="ttl-select"></select>
+        </label>
+        <label class="inline check"><input id="burn-check" type="checkbox"> 讀取一次後刪除</label>
+        <button id="send-btn" type="button" class="primary push">傳送</button>
+      </div>
+    </section>
+
+    <section class="card" id="drop-zone">
+      <div class="row wrap">
+        <button id="pick-files" type="button">選擇檔案</button>
+        <button id="pick-photos" type="button">相簿照片／影片</button>
+        <button id="pick-folder" type="button">選擇資料夾</button>
+      </div>
+      <p class="muted drop-hint">也可以把檔案或資料夾拖進來，或直接貼上圖片。使用上方的「有效時間」與「讀取一次後刪除」設定。</p>
+      <input id="file-input" type="file" multiple hidden>
+      <input id="photo-input" type="file" multiple accept="image/*,video/*" hidden>
+      <input id="folder-input" type="file" webkitdirectory multiple hidden>
+      <ul id="uploads" class="uploads"></ul>
+    </section>
+
+    <div class="row between list-head">
+      <h2>歷史紀錄 <span id="count" class="muted"></span></h2>
+      <button id="clear-btn" type="button" class="ghost">全部清除</button>
+    </div>
+    <ul id="list" class="list"></ul>
+    <p id="empty" class="muted center" hidden>目前沒有紀錄</p>
+  </main>
+
+  <dialog id="manual-dialog">
+    <form method="dialog">
+      <p id="manual-msg">自動複製失敗，請手動複製以下內容：</p>
+      <textarea id="manual-text" rows="8" readonly></textarea>
+      <div class="row"><button class="primary" value="close">關閉</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="preview-dialog" class="preview">
+    <div id="preview-body"></div>
+    <form method="dialog"><div class="row"><button class="primary" value="close">關閉</button></div></form>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script type="module" src="/app.mjs"></script>
+</body>
+</html>
